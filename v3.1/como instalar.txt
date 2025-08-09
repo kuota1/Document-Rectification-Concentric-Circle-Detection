@@ -1,0 +1,21 @@
+Desde la raíz del repo (donde está pyproject.toml):
+
+bash
+Copy
+Edit
+# activar tu venv
+pip install -U pip
+pip install -e .
+
+
+
+Ejemplos:
+
+bash
+Copy
+Edit
+# una sola imagen
+docfix "C:\Users\USUARIO\Downloads\proyeco fotografia\v3\2_ejemplo.jpg" --outdir out
+
+# carpeta completa
+docfix "C:\Users\USUARIO\Downloads\proyeco fotografia\v3" --outdir out --scale 0.9

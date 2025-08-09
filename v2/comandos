@@ -1,0 +1,75 @@
+Librerías usadas
+argparse (stdlib): parsea argumentos de línea de comandos.
+
+json (stdlib): escribe result.json.
+
+os (stdlib): crear carpeta out/.
+
+math (stdlib): trigonometría básica.
+
+numpy: arreglos y operaciones numéricas.
+
+cv2 (OpenCV): toda la parte de imagen: leer, rotar, bordes, Hough, dibujar, etc.
+
+(En esta v2 no usamos scikit-image; podría entrar luego para otras mejoras.)
+
+Qué hace cada función (y qué es de OpenCV vs propio)
+clahe(gray) → OpenCV cv.createCLAHE(...).apply(...)
+Mejora contraste local antes de detectar bordes.
+
+adaptive_canny(gray) → OpenCV cv.Canny(...)
+Bordes con umbrales calculados por nosotros vía NumPy (mediana).
+
+angle_from_lines(lines) → Nuestra lógica + math/numpy
+Recibe líneas (de Hough) y calcula el ángulo dominante (mediana).
+
+rotate_image(img, angle_rad) → OpenCV
+cv.getRotationMatrix2D(...) + cv.warpAffine(...) para rotar.
+
+rectify_with_grid(img) → OpenCV + nuestra lógica
+
+gris + CLAHE + Canny
+
+cv.HoughLinesP(...) para líneas del cuaderno
+
+angle_from_lines(...)
+
+rotate_image(...) para alinear la imagen
+
+suppress_grid_for_circles(gray) → OpenCV
+
+Canny
+
+Morfología con kernels horizontales/verticales (cv.morphologyEx)
+
+Quita líneas largas (grid) y deja bordes curvos.
+
+detect_circle(gray, minr, maxr) → OpenCV + nuestra lógica
+
+cv.GaussianBlur(...)
+
+(fallback) usa la imagen “sin grid”
+
+cv.HoughCircles(...) para obtener candidatos
+
+Selección del mejor: calculamos el gradiente (NumPy) y puntuamos cada círculo por la nitidez promedio en su perímetro; nos quedamos con el de mayor score.
+
+process(image_path, ...) → orquestación
+
+cv.imread(...)
+
+rectify_with_grid(...) → guarda rectified.png
+
+detect_circle(...) → dibuja con cv.circle(...) y guarda overlay.png
+
+Escribe result.json (con json)
+
+Usa os.makedirs para la carpeta.
+
+if __name__ == "__main__": → argparse
+Define parámetros (image, --outdir, --minr, --maxr, --scale) y llama process(...).
+
+Qué es “propio” vs “lib”
+Propio: estrategia, orden del pipeline, cómo calculamos el ángulo, cómo quitamos el grid, cómo puntuamos los círculos, validaciones y salidas.
+
+Librerías: operaciones de bajo nivel (bordes, Hough, warps, morfología, IO).

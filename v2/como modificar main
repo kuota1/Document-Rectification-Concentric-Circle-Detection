@@ -1,0 +1,136 @@
+1) Rectificación por líneas (HoughLinesP)
+En rectify_with_grid():
+
+threshold=120: votos mínimos para aceptar una línea.
+
+Síntoma: no endereza (no detecta líneas) → baja a 80–100.
+
+Síntoma: endereza raro por líneas falsas → sube a 140–180.
+
+Rango seguro: 80–200.
+
+minLineLength=min(img.shape[:2])//4: longitud mínima de línea.
+
+Síntoma: no encuentra líneas largas del cuaderno → baja a //6 o //8.
+
+Síntoma: toma rayitas cortas y se confunde → sube a //3.
+
+Rango seguro: entre lado corto // 8 y lado corto // 3.
+
+maxLineGap=10: separación para unir segmentos.
+
+Síntoma: líneas del cuaderno vienen “cortadas” → sube a 15–25.
+
+Síntoma: une cosas que no debe → baja a 5–8.
+
+Rango seguro: 5–25.
+
+Consejo: si la rectificación quedó “casi” horizontal, es normal; nuestra meta aquí es orientar la imagen, no “arreglar” perspectiva (eso lo haríamos en una etapa posterior si hiciera falta).
+
+2) Borrado del grid (morfología)
+En suppress_grid_for_circles():
+
+k = max(15, min(shape)//40): tamaño del kernel lineal.
+
+Síntoma: el grid no se borra del todo → sube k (p. ej. //30 o //25).
+
+Síntoma: se come parte del borde circular → baja k (p. ej. //50).
+
+Rango seguro: lado corto // 25 a // 60.
+
+3) Bordes (Canny)
+En adaptive_canny():
+
+Umbrales se calculan a partir de la mediana de intensidades; es robusto.
+
+Síntoma: ves pocos bordes (overlay sin círculo) → prueba aumentar contraste (CLAHE ya lo hace) o bajar un poco el factor (p. ej. cambiar 0.66→0.6 y 1.33→1.4).
+
+Síntoma: demasiados bordes ruidosos → sube 0.66→0.75 y 1.33→1.25.
+
+Rango seguro: low=0.6–0.8×mediana, high=1.2–1.5×mediana.
+
+4) Detección del círculo (HoughCircles)
+En detect_circle():
+
+dp=1.2: resolución de la acumulación vs imagen.
+
+Normalmente no toques esto. Si la imagen es enorme, sube a 1.4–1.6 para acelerar.
+
+minDist=int(0.8*min(h,w)): distancia mínima entre centros.
+
+Tenemos solo una moneda; dejarlo grande evita duplicados. Déjalo así.
+
+param1=120: umbral alto del Canny interno de Hough.
+
+Síntoma: no detecta círculo (borde tenue) → baja a 90–110.
+
+Síntoma: muchas detecciones falsas → sube a 140–180.
+
+Rango seguro: 90–180.
+
+param2=30 (o 20 en el intento 2): votos mínimos para aceptar un círculo.
+
+Síntoma: no encuentra nada → baja a 22–28.
+
+Síntoma: detecta círculos demasiado grandes/pequeños falsos → sube a 32–40.
+
+Rango seguro: 20–40.
+
+minRadius / maxRadius: tus mejores amigos.
+
+Síntoma: encuentra un círculo mucho más grande (capsulita, reflejo) → reduce maxRadius.
+
+Síntoma: nunca lo detecta → baja minRadius.
+
+Regla rápida: mira el overlay y estima el radio aprox. (en px). Luego usa ±30%:
+
+Si te dio 353 px → --minr 250 --maxr 450.
+
+Rango seguro: evita minr < 10 y maxr > 0.5*lado corto.
+
+5) Escalado (speed vs precisión)
+--scale: reescala antes de procesar.
+
+Si tu imagen es 4000×3000, usar --scale 0.6–0.8 acelera mucho y suele mantener precisión.
+
+Si pierde el círculo, vuelve a 1.0.
+
+6) Cómo probar cambios sin perderte
+Cambia un parámetro a la vez y mira overlay.png.
+
+Guarda versiones en carpetas distintas: --outdir out_p120, out_p140, etc.
+
+Si algo se descompone, vuelve al último “bueno”.
+
+7) Ejemplos de comandos
+“Me detecta un círculo muy grande”:
+
+css
+Copy
+Edit
+python main.py 2_ejemplo.jpg --outdir out_tune --minr 250 --maxr 450
+“No encuentra nada, el borde está tenue”:
+(bajamos param1 y param2)
+
+css
+Copy
+Edit
+python main.py 2_ejemplo.jpg --outdir out_soft --minr 250 --maxr 450
+                             --scale 0.9
+(en el código, si quieres, cambia param1=100, param2=24)
+
+“El grid no se borra bien”:
+en código, sube k:
+
+python
+Copy
+Edit
+k = max(15, min(gray.shape[:2])//30)  # antes //40
+8) ¿Qué NO mover (o con cuidado)?
+dp y minDist de HoughCircles casi nunca hace falta tocarlos.
+
+El cálculo del ángulo por mediana (robusto): no cambies a “promedio”.
+
+CLAHE: clipLimit=2.0 y tileGridSize=(8,8) suelen ser estables.
+
+Si quieres, dime qué síntoma quieres mejorar (p. ej., “me detecta el aro de plástico, no la moneda”) y te digo exactamente qué dos parámetros tocar y en qué valor probar primero.
