@@ -6,3 +6,10 @@ out*/
 *.jpg
 *.jpeg
 *.zip
+
+# Ignorar carpeta de salidas
+/out/
+
+# Ignorar estos dos archivos de texto
+comandos.txt
+main.txt
